@@ -18,53 +18,55 @@
 ####################################################
 
 
-from threading import Thread
-from time import localtime, strftime
-from binascii import crc32
+from threading import Thread as _Thread
+from time import localtime as _localtime
+from time import strftime as _strftime
+from binascii import crc32 as _crc32
 
 
 class TCRNG:
-    formating_chars = "aAbBcdHIjmMpSUwWxXyYz"
-    seed = 6
-    generating_seed = False
+
+    __formating_chars = "aAbBcdHIjmMpSUwWxXyYz"
+    __seed = 6
+    __generating_seed = False
 
     @staticmethod
-    def GenerateSeed():
+    def __GenerateSeed():
         i = 0
-        while TCRNG.generating_seed:
+        while TCRNG.__generating_seed:
             if i > 19:
                 i = 1
-                TCRNG.seed = i
+                TCRNG.__seed = i
             else:
                 i += 1
-                TCRNG.seed = i
+                TCRNG.__seed = i
 
     @staticmethod
     def StartGeneratingSeed():
         # This function must be call at start program
-        TCRNG.generate_seed = True
-        t = Thread(target=TCRNG.GenerateSeed)
+        TCRNG.__generating_seed = True
+        t = _Thread(target=TCRNG.__GenerateSeed)
         t.start()
 
     @staticmethod
     def StopGeneratingSeed():
-        TCRNG.generate_seed = False
+        TCRNG.__generating_seed = False
 
     @staticmethod
-    def Rotate(strg, n):
+    def __Rotate(strg, n):
         return strg[n:] + strg[:n]
 
     @staticmethod
-    def ShufTimeFormChars():
-        seed = TCRNG.seed
+    def __ShufTimeFormChars():
+        seed = TCRNG.__seed
         start = 0
         sharp = []
         brk = False
         while True:
             row = []
             for i in range(start, start + seed):
-                row.append(TCRNG.formating_chars[i])
-                if TCRNG.formating_chars[i] == TCRNG.formating_chars[-1]:
+                row.append(TCRNG.__formating_chars[i])
+                if TCRNG.__formating_chars[i] == TCRNG.__formating_chars[-1]:
                     sharp.append(row)
                     brk = True
                     break
@@ -79,27 +81,27 @@ class TCRNG:
                     temp += sharp[c][r]
                 except IndexError:
                     pass
-        TCRNG.formating_chars = TCRNG.Rotate(temp, 1 if (TCRNG.seed % 2) == 0 else -1)
+        TCRNG.__formating_chars = TCRNG.__Rotate(temp, 1 if (TCRNG.__seed % 2) == 0 else -1)
 
     @staticmethod
     def Random32bitHex():
-        TCRNG.ShufTimeFormChars()
+        TCRNG.__ShufTimeFormChars()
         fs = ""
-        for ch in TCRNG.formating_chars:
+        for ch in TCRNG.__formating_chars:
             fs += "%" + ch
-        return "%08x" % (crc32(strftime(fs, localtime())) % 4294967296)
+        return "%08x" % (_crc32(_strftime(fs, _localtime())) % 4294967296)
 
     @staticmethod
     def RandBool():
         # Return random Bool value.
-        if not TCRNG.generating_seed:
+        if not TCRNG.__generating_seed:
             print(" !WARNING! Seed generator not running. Function return less random value.")
         return True if int(TCRNG.Random32bitHex(), 16) % 2 == 0 else False
 
     @staticmethod
     def RandInt(size_in_bites):
         # Return random n-bit integer
-        if not TCRNG.generating_seed:
+        if not TCRNG.__generating_seed:
             print(" !WARNING! Seed generator not running. Function return less random value.")
         integer = ""
         for i in range(0, size_in_bites):
