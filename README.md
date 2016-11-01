@@ -4,6 +4,8 @@
 
 ###This module provide three RNG functions:
 
+Rand512bitHex() - return random 512-bit Hex value.
+
 RandBool() - return random bool value.
 
 RandInt(size_in_bites) - return random integer in defined size.
