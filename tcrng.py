@@ -27,6 +27,7 @@ from binascii import crc32 as _crc32
 class TCRNG:
 
     __formating_chars = "aAbBcdHIjmMpSUwWxXyYz"
+    __key_charset = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
     __seed = 6
     __generating_seed = False
 
@@ -110,3 +111,13 @@ class TCRNG:
             else:
                 integer += "0"
         return int(integer, base=2)
+
+    @staticmethod
+    def RandKey(length):
+        # Return random n-leght key consist of chars of base64 charset
+        if not TCRNG.__generating_seed:
+            print(" !WARNING! Seed generator not running. Function return less random value.")
+        key = ""
+        for i in range(length):
+            key += TCRNG.__key_charset[TCRNG.RandInt(6)]
+        return key
