@@ -1,6 +1,6 @@
 # Time-Controlled-RNG
 
-![Random Image](http://www.imagehosting.cz/?v=1000x1000r.jpg)
+![Random Image](http://www.imagehosting.cz/images/1000x1000r.jpg)
 
 ###This module provide three RNG functions:
 
