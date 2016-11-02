@@ -195,6 +195,7 @@ def StartSeedGeneration():
 
 def StopSeedGeneration():
     """This function stop thread for seed generation. When call this function module save actually permutation of
+    formatting chars to file "internal_state.txt" to module directory.."""
     TCRNG.StopSeedGeneration()
 
 
