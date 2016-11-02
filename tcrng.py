@@ -1,4 +1,4 @@
-# Copyright 2016 Michal Paulenka
+# Copyright 2016 Michal Paulenka <paulenkamichal@gmail.com>
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -18,56 +18,65 @@
 ####################################################
 
 
-from threading import Thread as _Thread
-from time import localtime as _localtime
-from time import strftime as _strftime
-from hashlib import sha512 as _sha512
+from threading import Thread
+from time import localtime
+from time import strftime
+from hashlib import sha512
+
+__all__ = ["StartSeedGeneration", "StopSeedGeneration", "Rand512bitHex", "RandInt", "RandBool", "RandKey", "RandBytes",
+           "RandListOfInt", "__version__", "__author__"]
+
+__doc__ = "This module is time based random number generator, provide six functions for generation random data. " \
+          "The most important thing is call StartSeedGeneration() on start program. This is important for random " \
+          "output of functions."
+
+__version__ = "0.9"
+
+__author__ = "Feshider"
 
 
 class TCRNG:
-
-    __formating_chars = "aAbBcdHIjmMpSUwWxXyYz"  # 51090942171709440000 permutations
-    __key_charset = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
-    __seed = 6
-    __generating_seed = False
+    formating_chars = "aAbBcdHIjmMpSUwWxXyYz"  # 51090942171709440000 permutations
+    key_charset = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
+    seed = 6
+    generating_seed = False
 
     @staticmethod
-    def __GenerateSeed():
+    def GenerateSeed():
         i = 0
-        while TCRNG.__generating_seed:
+        while TCRNG.generating_seed:
             if i > 19:
                 i = 1
-                TCRNG.__seed = i
+                TCRNG.seed = i
             else:
                 i += 1
-                TCRNG.__seed = i
+                TCRNG.seed = i
 
     @staticmethod
-    def StartGeneratingSeed():
-        # This function must be call at start program
-        TCRNG.__generating_seed = True
-        t = _Thread(target=TCRNG.__GenerateSeed)
+    def StartSeedGeneration():
+        TCRNG.generating_seed = True
+        t = Thread(target=TCRNG.GenerateSeed)
         t.start()
 
     @staticmethod
-    def StopGeneratingSeed():
-        TCRNG.__generating_seed = False
+    def StopSeedGeneration():
+        TCRNG.generating_seed = False
 
     @staticmethod
-    def __Rotate(strg, n):
+    def Rotate(strg, n):
         return strg[n:] + strg[:n]
 
     @staticmethod
-    def __ShufTimeFormChars():
-        seed = TCRNG.__seed
+    def ShufTimeFormChars():
+        seed = TCRNG.seed
         start = 0
         sharp = []
         brk = False
         while True:
             row = []
             for i in range(start, start + seed):
-                row.append(TCRNG.__formating_chars[i])
-                if TCRNG.__formating_chars[i] == TCRNG.__formating_chars[-1]:
+                row.append(TCRNG.formating_chars[i])
+                if TCRNG.formating_chars[i] == TCRNG.formating_chars[-1]:
                     sharp.append(row)
                     brk = True
                     break
@@ -82,55 +91,114 @@ class TCRNG:
                     temp += sharp[c][r]
                 except IndexError:
                     pass
-        TCRNG.__formating_chars = TCRNG.__Rotate(temp, 1 if (TCRNG.__seed % 2) == 0 else -1)
+        TCRNG.formating_chars = TCRNG.Rotate(temp, 1 if (TCRNG.seed % 2) == 0 else -1)
 
     @staticmethod
-    def Random512bitHex(show=True):
-        # Return random 512-bit Hex value.
-        if (not TCRNG.__generating_seed) and show:
+    def Rand512bitHex(show):
+        if not TCRNG.generating_seed and show:
             print(" !WARNING! Seed generator not running. Function return less random value.")
-        TCRNG.__ShufTimeFormChars()
+        TCRNG.ShufTimeFormChars()
         fs = ""
-        for ch in TCRNG.__formating_chars:
+        for ch in TCRNG.formating_chars:
             fs += "%" + ch
-        return _sha512(_strftime(fs, _localtime())).hexdigest()
+        return sha512(strftime(fs, localtime())).hexdigest()
 
     @staticmethod
-    def RandBool(show=True):
-        # Return random Bool value.
-        if (not TCRNG.__generating_seed) and show:
+    def RandBool(show):
+        if not TCRNG.generating_seed and show:
             print(" !WARNING! Seed generator not running. Function return less random value.")
-        return True if int(TCRNG.Random512bitHex(show=False), 16) % 2 == 0 else False
+        return True if int(TCRNG.Rand512bitHex(show=False), 16) % 2 == 0 else False
 
     @staticmethod
-    def RandInt(size_in_bites, show=True):
-        # Return random n-bit integer.
-        if (not TCRNG.__generating_seed) and show:
+    def RandInt(_min, _max, show):
+        if not TCRNG.generating_seed and show:
             print(" !WARNING! Seed generator not running. Function return less random value.")
-        i = 512
-        ret = ""
+
+        rand = ""
+        m = (_max + 1) - _min
+        i = 1
         while True:
-            ret += bin(int(TCRNG.Random512bitHex(show=False), 16))[2:].zfill(512)
-            i *= 2
-            if i >= size_in_bites:
-                break
-        if size_in_bites == len(ret):
-            return int(ret, 2)
-        return int(ret[:size_in_bites], 2)
+            rand += TCRNG.Rand512bitHex(show=False)
+            if m <= (2 ** (512 * i)):
+                return (int(rand, 16) % m) + _min
+            i += 1
 
     @staticmethod
     def RandKey(length, show=True):
-        # Return random n-leght key consist of chars of base64 charset
-        if (not TCRNG.__generating_seed) and show:
+        if not TCRNG.generating_seed and show:
             print(" !WARNING! Seed generator not running. Function return less random value.")
 
         key = ""
         while True:
-            temp = bin(int(TCRNG.Random512bitHex(show=False), 16))[2:].zfill(512)[:510]
-            temp = [temp[i:i+6] for i in range(0, len(temp), 6)]
+            temp = bin(int(TCRNG.Rand512bitHex(show=False), 16))[2:].zfill(512)[:510]
+            temp = [temp[i:i + 6] for i in range(0, len(temp), 6)]
             for c in temp:
-                key += TCRNG.__key_charset[int(c, 2)]
+                key += TCRNG.key_charset[int(c, 2)]
             if len(key) == length:
                 return key
             elif len(key) > length:
                 return key[:length]
+
+    @staticmethod
+    def RandBytes(size, show):
+        if not TCRNG.generating_seed and show:
+            print(" !WARNING! Seed generator not running. Function return less random value.")
+
+        size *= 2
+        rand = ""
+        while True:
+            rand += TCRNG.Rand512bitHex(show=False)
+            if len(rand) == size:
+                return bytearray.fromhex(rand)
+            elif len(rand) > size:
+                return bytearray.fromhex(rand[:size])
+
+    @staticmethod
+    def RandListOfInt(length, _min, _max, show):
+        if not TCRNG.generating_seed and show:
+            print(" !WARNING! Seed generator not running. Function return less random value.")
+
+        ls = []
+        for i in range(length):
+            ls.append(TCRNG.RandInt(_min, _max, show=False))
+        return ls
+
+
+def StartSeedGeneration():
+    """This function start thread for seed generation. Its important for randomness."""
+    TCRNG.StartSeedGeneration()
+
+
+def StopSeedGeneration():
+    """This function stop thread for seed generation."""
+    TCRNG.StopSeedGeneration()
+
+
+def Rand512bitHex(show=True):
+    """Return random 512-bit Hex value."""
+    return TCRNG.Rand512bitHex(show)
+
+
+def RandBool(show=True):
+    """Return random bool value."""
+    return TCRNG.RandBool(show)
+
+
+def RandInt(_min, _max, show=True):
+    """Return random integer in range _min and _max (including min and max)."""
+    return TCRNG.RandInt(_min, _max, show)
+
+
+def RandKey(length, show=True):
+    """Return random key in defined length consist of chars of base64 charset"""
+    return TCRNG.RandKey(length, show)
+
+
+def RandBytes(size, show=True):
+    """Return random bytearray in defined size."""
+    return TCRNG.RandBytes(size, show)
+
+
+def RandListOfInt(length, _min, _max, show=True):
+    """Return a list of defined length consist of integers in a defined range."""
+    return TCRNG.RandListOfInt(length, _min, _max, show)
