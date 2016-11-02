@@ -57,10 +57,33 @@ class TCRNG:
         TCRNG.generating_seed = True
         t = Thread(target=TCRNG.GenerateSeed)
         t.start()
+        try:
+            f = open("internal_state.txt", "r")
+            content = f.read()
+            if content != "":
+                for c in content:
+                    if c not in TCRNG.formating_chars:
+                        f.close()
+                        return
+                TCRNG.formating_chars = content
+        except IOError:
+            pass
+        else:
+            f.close()
+
 
     @staticmethod
     def StopSeedGeneration():
         TCRNG.generating_seed = False
+        try:
+            f = open("internal_state.txt", "w")
+            f.seek(0)
+            f.truncate()
+        except IOError:
+            f = open("internal_state.txt", "w+")
+        finally:
+            f.write(TCRNG.formating_chars)
+            f.close()
 
     @staticmethod
     def Rotate(strg, n):
@@ -165,12 +188,13 @@ class TCRNG:
 
 
 def StartSeedGeneration():
-    """This function start thread for seed generation. Its important for randomness."""
+    """This function start thread for seed generation. Its important for randomness. If exist file "internal_state.txt",
+    in module directory, module load permutation of formatting chars from this file."""
     TCRNG.StartSeedGeneration()
 
 
 def StopSeedGeneration():
-    """This function stop thread for seed generation."""
+    """This function stop thread for seed generation. When call this function module save actually permutation of
     TCRNG.StopSeedGeneration()
 
 
