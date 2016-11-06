@@ -130,7 +130,7 @@ class TCRNG:
     def RandBool(show):
         if not TCRNG.generating_seed and show:
             print(" !WARNING! Seed generator not running. Function return less random value.")
-        return True if int(TCRNG.Rand512bitHex(show=False), 16) % 2 == 0 else False
+        return True if int(TCRNG.Rand512bitHex(False), 16) % 2 == 0 else False
 
     @staticmethod
     def RandInt(_min, _max, show):
@@ -141,19 +141,19 @@ class TCRNG:
         m = (_max + 1) - _min
         i = 1
         while True:
-            rand += TCRNG.Rand512bitHex(show=False)
+            rand += TCRNG.Rand512bitHex(False)
             if m <= (2 ** (512 * i)):
                 return (int(rand, 16) % m) + _min
             i += 1
 
     @staticmethod
-    def RandKey(length, show=True):
+    def RandKey(length, show):
         if not TCRNG.generating_seed and show:
             print(" !WARNING! Seed generator not running. Function return less random value.")
 
         key = ""
         while True:
-            temp = bin(int(TCRNG.Rand512bitHex(show=False), 16))[2:].zfill(512)[:510]
+            temp = bin(int(TCRNG.Rand512bitHex(False), 16))[2:].zfill(512)[:510]
             temp = [temp[i:i + 6] for i in range(0, len(temp), 6)]
             for c in temp:
                 key += TCRNG.key_charset[int(c, 2)]
@@ -170,7 +170,7 @@ class TCRNG:
         size *= 2
         rand = ""
         while True:
-            rand += TCRNG.Rand512bitHex(show=False)
+            rand += TCRNG.Rand512bitHex(False)
             if len(rand) == size:
                 return bytearray.fromhex(rand)
             elif len(rand) > size:
@@ -183,8 +183,15 @@ class TCRNG:
 
         ls = []
         for i in range(length):
-            ls.append(TCRNG.RandInt(_min, _max, show=False))
+            ls.append(TCRNG.RandInt(_min, _max, False))
         return ls
+
+    @staticmethod
+    def RandListChoice(ls, show):
+        if not TCRNG.generating_seed and show:
+            print(" !WARNING! Seed generator not running. Function return less random value.")
+
+        return ls[TCRNG.RandInt(0, len(ls)-1, False)]
 
 
 def StartSeedGeneration():
@@ -227,3 +234,7 @@ def RandBytes(size, show=True):
 def RandListOfInt(length, _min, _max, show=True):
     """Return a list of defined length consist of integers in a defined range."""
     return TCRNG.RandListOfInt(length, _min, _max, show)
+
+def RandListChoice(ls, show=True):
+    """Return random item from list."""
+    return TCRNG.RandListChoice(ls, show)
